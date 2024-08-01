@@ -1,1 +1,0 @@
-g++ Server.cpp -o Server.exe -lwsock32 -lws2_32
