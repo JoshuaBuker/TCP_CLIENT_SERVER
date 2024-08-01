@@ -125,7 +125,7 @@ int main(void) {
 
     while (true) {
         connectionManager(server, clientThreads, clientSockets);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Small delay to prevent tight loop
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     for (auto& clientThread : clientThreads) {
