@@ -7,12 +7,19 @@
 #pragma comment(lib,"Ws2_32.lib")
 using std::cout, std::string;
 
+const int port = 55555;
+
 int getMessages(SOCKET& clientSocket) {
     char buffer[200];
 
     while (true) {
         int byteCount = recv(clientSocket, buffer, 200, 0);
         cout << "\nOther User: " << buffer << "\n";
+
+        if (~byteCount > 0) {
+          cout << "Message has failed to send!\n";
+          return -1;
+        }
     }
 
     return 0;
@@ -31,14 +38,17 @@ int sendMessages(SOCKET& clientSocket) {
 
         if (~byteCount > 0) {
             cout << "Message has failed to send!\n";
+            return -1;
         }
     }
+
+    return 0;
 }
 
 int Init() {
     // -------------------------------------------------------------
 
-    const int port = 55555;
+    
     WSADATA wsaData;
     int wsaerr;
     WORD wVersionRequested = MAKEWORD(2, 2);
@@ -67,13 +77,15 @@ int ServerConnect(SOCKET clientSocket) {
 
     InetPton(AF_INET, _T("127.0.0.1"), &clientService.sin_addr.s_addr);
 
-    clientService.sin_port = htons(55555);
+    clientService.sin_port = htons(port);
 
     if (connect(clientSocket, (SOCKADDR*)&clientService, sizeof(clientService)) == SOCKET_ERROR) {
         cout << "Client: connect() - Failed To Connect: " << WSAGetLastError() << std::endl;
         WSACleanup();
-        return 0;
+        return -1;
     }
+
+    return 0;
 }
 
 int MakeThread(SOCKET clientSocket) {
@@ -88,12 +100,13 @@ int MakeThread(SOCKET clientSocket) {
     if (sendThread && sendThread->joinable()) {
         sendThread->join();
     }
+
+    return 0;
 }
 
 int main(void) {
     // -------------------------------------------------------------
     int ServerConn = Init();
-    const int port = 55555;
 
     if (ServerConn == 1) { // If the socket fails, then it exits the program, just as the original code intended
         return 1;
