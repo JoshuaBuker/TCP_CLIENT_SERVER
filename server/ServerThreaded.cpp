@@ -7,6 +7,8 @@
 #include <tchar.h>
 #include <ws2tcpip.h>
 
+// Line 38
+
 #define MAX_CLIENTS 10
 #define MESSAGE_BUFFER_SIZE 1024
 
@@ -33,7 +35,7 @@ void getMessages(SOCKET client, std::vector<SOCKET>& clientSockets) {
             break;
         }
 
-        buffer[byteCount] = '\0';
+        //buffer[byteCount] = '\0'; // Buffer overflow problem
         printf("Client: %s\n", buffer);
 
         std::lock_guard<std::mutex> lock(clientMutex);
@@ -99,7 +101,7 @@ SOCKET makeServer() {
     sockaddr_in service;
     service.sin_family = AF_INET;
 
-    InetPton(AF_INET, _T("107.132.184.35"), &service.sin_addr.s_addr);
+    InetPton(AF_INET, _T("192.168.56.1"), &service.sin_addr.s_addr);
     service.sin_port = htons(port);
 
     if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
