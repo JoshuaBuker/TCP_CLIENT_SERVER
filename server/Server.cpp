@@ -7,12 +7,8 @@
 #include <tchar.h>
 #include <ws2tcpip.h>
 
-// Line 38
-
 #define MAX_CLIENTS 10
 #define MESSAGE_BUFFER_SIZE 1024
-
-#pragma comment(lib,"Ws2_32.lib")
 
 using std::cout;
 
@@ -27,15 +23,14 @@ void getMessages(SOCKET client, std::vector<SOCKET>& clientSockets) {
         if (byteCount <= 0) {
             if (byteCount == 0) {
                 std::cout << "Connection closed by client" << std::endl;
-            }
-            else {
+            } else {
                 std::cout << "recv failed: " << WSAGetLastError() << std::endl;
             }
             closesocket(client);
             break;
         }
 
-        //buffer[byteCount] = '\0'; // Buffer overflow problem
+        buffer[byteCount] = '\0';
         printf("Client: %s\n", buffer);
 
         std::lock_guard<std::mutex> lock(clientMutex);
@@ -64,9 +59,9 @@ void connectionManager(const SOCKET server, std::vector<std::unique_ptr<std::thr
     clientSockets.push_back(clientSocket);
 
     for (int i = 0; i < MAX_CLIENTS; i++) {
-        std::lock_guard<std::mutex> lock(clientMutex);
+      std::lock_guard<std::mutex> lock(clientMutex);
         if (clientThreads[i] == nullptr || !clientThreads[i]->joinable()) {
-
+            
             if (clientSocket != INVALID_SOCKET) {
                 clientThreads[i] = std::make_unique<std::thread>(getMessages, clientSocket, std::ref(clientSockets));
             }
@@ -76,47 +71,47 @@ void connectionManager(const SOCKET server, std::vector<std::unique_ptr<std::thr
 }
 
 SOCKET makeServer() {
-    const int port = 55555;
-    int wsaerr;
-    WORD wVersionRequested = MAKEWORD(2, 2);
-    SOCKET serverSocket;
-    WSADATA wsaData;
+  const int port = 55555;
+  int wsaerr;
+  WORD wVersionRequested = MAKEWORD(2,2);
+  SOCKET serverSocket;
+  WSADATA wsaData;
 
-    wsaerr = WSAStartup(wVersionRequested, &wsaData);
+  wsaerr = WSAStartup(wVersionRequested, &wsaData);
 
-    if (wsaerr != 0) {
-        cout << "The winsock dll not found!" << std::endl;
-        return 0;
-    }
+  if (wsaerr != 0) {
+    cout << "The winsock dll not found!" << std::endl;
+    return 0;
+  }
 
-    serverSocket = INVALID_SOCKET;
-    serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  serverSocket = INVALID_SOCKET;
+  serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    if (serverSocket == INVALID_SOCKET) {
-        cout << "Error at socket(): " << WSAGetLastError() << std::endl;
-        WSACleanup();
-        return 0;
-    }
+  if (serverSocket == INVALID_SOCKET) {
+    cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+    WSACleanup();
+    return 0;
+  }
 
-    sockaddr_in service;
-    service.sin_family = AF_INET;
+  sockaddr_in service;
+  service.sin_family = AF_INET;
 
-    InetPton(AF_INET, _T("192.168.56.1"), &service.sin_addr.s_addr);
-    service.sin_port = htons(port);
+  InetPton(AF_INET, _T("127.0.0.1"), &service.sin_addr.s_addr);
+  service.sin_port = htons(port);
 
-    if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
-        cout << "bind() failed: " << WSAGetLastError() << std::endl;
-        WSACleanup();
-        return 0;
-    }
+  if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
+    cout << "bind() failed: " << WSAGetLastError() << std::endl;
+    WSACleanup();
+    return 0;
+  }
 
-    if (listen(serverSocket, 1) == SOCKET_ERROR) {
-        cout << "listen(): Error listening on socket " << WSAGetLastError << std::endl;
-        WSACleanup();
-        return 0;
-    }
+  if (listen(serverSocket, 1) == SOCKET_ERROR) {
+    cout << "listen(): Error listening on socket " << WSAGetLastError << std::endl;
+    WSACleanup();
+    return 0;
+  }
 
-    return serverSocket;
+  return serverSocket;
 }
 
 int main(void) {
