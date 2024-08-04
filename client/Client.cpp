@@ -66,7 +66,7 @@ int createSocket(SOCKET& clientSocket) {
   return 1;
 }
 
-int connectToServer(SOCKET& clientSocket) {
+int connectToServer(const SOCKET& clientSocket) {
   sockaddr_in clientService;
   clientService.sin_family = AF_INET;
 
