@@ -83,7 +83,7 @@ int main() {
 	// Setup the Socket Information
 	struct sockaddr_in SockInfo;
 	SockInfo.sin_family = AF_INET;
-	SockInfo.sin_addr.s_addr = inet_addr("192.168.1.152");
+	SockInfo.sin_addr.s_addr = inet_addr("127.0.0.1");
 	SockInfo.sin_port = htons(55555);
 
 	// Manage The Connection
