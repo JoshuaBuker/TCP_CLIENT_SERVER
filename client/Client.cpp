@@ -9,15 +9,16 @@ using std::cout, std::string;
 
 #define PORT 55555
 #define IP "127.0.0.1"
+#define MAX_MESSAGE_LENGTH 1024
 
 SOCKET clientSocket;
 std::unique_ptr<std::thread> threads[2];
 
 int getMessages(const SOCKET& clientSocket) {
-  char buffer[200];
+  char buffer[MAX_MESSAGE_LENGTH];
 
   while (true) {
-    int byteCount = recv(clientSocket, buffer, 200, 0);
+    int byteCount = recv(clientSocket, buffer, MAX_MESSAGE_LENGTH, 0);
     if (byteCount > 0) {
       cout << "\nOther User: " << buffer << "\n";
     } 
@@ -27,11 +28,11 @@ int getMessages(const SOCKET& clientSocket) {
 }
 
 int sendMessages(const SOCKET& clientSocket) {
-  char buffer[200];
+  char buffer[MAX_MESSAGE_LENGTH];
 
   while (true) {
-    std::cin.getline(buffer, 200);
-    send(clientSocket, buffer, 200, 0);
+    std::cin.getline(buffer, MAX_MESSAGE_LENGTH);
+    send(clientSocket, buffer, MAX_MESSAGE_LENGTH, 0);
   }
 
   return 0;
