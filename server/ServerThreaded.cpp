@@ -14,18 +14,24 @@ void RecvMessages(SOCKET Socket, std::vector<SOCKET> Clients) {
 	// Get The Message
 	char Message[MessageLength];
 	int Bytes;
-	for (SOCKET Client : Clients) {
-		Bytes = recv(Client, Message, MessageLength, 0);
-	}
-	int MessageLen = sizeof(Message);
-
-	// Send The Message To All OTher Clients
-	if (Bytes != 0) {
-		std::cout << "Client: " << Message << std::endl;
+	while (true) {
 		for (SOCKET Client : Clients) {
-			if (Socket != Client) {
-				send(Socket, Message, MessageLen, 0);
+			// Get Message
+			Bytes = recv(Client, Message, MessageLength, 0);
+			int MessageLen = sizeof(Message);
+
+			// Handle Message
+			// Send The Message To All OTher Clients
+			if (Bytes != 0) {
+				std::cout << "Client: " << Message << std::endl;
+				for (SOCKET Client : Clients) {
+					if (Socket != Client) {
+						send(Socket, Message, MessageLen, 0);
+					}
+				}
 			}
+
+			Sleep(0.1);
 		}
 	}
 }
@@ -38,7 +44,7 @@ SOCKET NewSocket() { // This Being In A Function Is Now Pointless, But Can Be Le
 		WSACleanup();
 		return 1;
 	} else {
-		std::cout << "Connection Succesful" << std::endl;
+		//::cout << "Connection Succesful" << std::endl;
 	}
 
 	return Socket;
@@ -48,9 +54,11 @@ void ConnectionManager(std::vector<SOCKET> Clients) { // Put In Thread
 	std::cout << "Listening For Connection's" << std::endl;
 
 	// Listen For Connections
+	SOCKET Socket = NewSocket();
 	while (true) {
-		SOCKET Socket = INVALID_SOCKET;
-		SOCKET Client = accept(Socket, NULL, NULL);
+		SOCKET NewClient = listen(Socket, NULL);
+		SOCKET Client = accept(NewClient, NULL, NULL);
+		Socket = NewSocket();
 		Clients.push_back(Client);
 	}
 }
@@ -71,26 +79,32 @@ int main() {
 	// Setup the Socket Information
 	struct sockaddr_in SockInfo;
 	SockInfo.sin_family = AF_INET;
-	SockInfo.sin_addr.s_addr = inet_addr("192.168.1.152");
+	SockInfo.sin_addr.s_addr = inet_addr("127.0.0.1");
 	SockInfo.sin_port = htons(55555);
 
 	std::vector<SOCKET> Clients(MaxClients);
 	SOCKET Socket = NewSocket();
+	Clients.push_back(Socket);
+
+	// Bind
+	if (bind(Socket, (SOCKADDR*)&SockInfo, sizeof(SockInfo)) == SOCKET_ERROR) {
+		std::cout << "Error: Failed To Bind The Socket" << std::endl;
+	}
 
 	// Manage The Connection
 	std::thread ConnThread(ConnectionManager, std::ref(Clients));
 	ConnThread.join();
 
 	// Get Messages From Client
-	while (true) {
-		if (Clients.size() > 0) {
+	/*while (true) {
+		if (Clients.size() > 1) {
 			break;
 		}
 		Sleep(0.1);
-	}
+	}*/
 
 	std::thread RecvThread(RecvMessages, std::ref(Socket), std::ref(Clients));
-
+	ConnThread.join();
 	RecvThread.join();
 
 	return 0;
