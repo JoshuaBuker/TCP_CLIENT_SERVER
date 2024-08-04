@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <vector>
 #include <thread>
+#include <tchar.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma warning(disable:4996) 
@@ -9,7 +10,7 @@
 #define MessageLength 1024
 #define MaxClients 10
 
-int RecvMessages(SOCKET Socket, std::vector<SOCKET> Clients) {
+void RecvMessages(SOCKET Socket, std::vector<SOCKET> Clients) {
 	// Get The Message
 	char Message[MessageLength];
 	int Bytes = recv(Socket, Message, MessageLength, 0);
@@ -24,8 +25,6 @@ int RecvMessages(SOCKET Socket, std::vector<SOCKET> Clients) {
 			}
 		}
 	}
-
-	return 0;
 }
 
 SOCKET NewSocket() { // This Being In A Function Is Now Pointless, But Can Be Left Alone
@@ -42,28 +41,14 @@ SOCKET NewSocket() { // This Being In A Function Is Now Pointless, But Can Be Le
 	return Socket;
 }
 
-void ConnectionManager() { // Put In Thread
+void ConnectionManager(std::vector<SOCKET> Clients) { // Put In Thread
 	std::cout << "Listening For Connection's" << std::endl;
-
-	// Get The Number Of Clients In The Client Vector
-	std::vector<SOCKET> Clients(MaxClients);
-	int ClientCount;
 
 	// Listen For Connections
 	while (true) {
 		SOCKET Socket = INVALID_SOCKET;
 		SOCKET Client = accept(Socket, NULL, NULL);
 		Clients.push_back(Client);
-
-		// Get Messages From Client
-		int Status = RecvMessages(Socket, Clients);
-		if (Status == 0) {
-			continue;
-
-		} else {
-			std::cout << "Connection Suddenly Stopped" << std::endl;
-			std::terminate(); // STOP THREAD
-		}
 	}
 }
 
@@ -83,12 +68,26 @@ int main() {
 	// Setup the Socket Information
 	struct sockaddr_in SockInfo;
 	SockInfo.sin_family = AF_INET;
-	SockInfo.sin_addr.s_addr = inet_addr("127.0.0.1");
+	SockInfo.sin_addr.s_addr = inet_addr("192.168.1.152");
 	SockInfo.sin_port = htons(55555);
 
+	std::vector<SOCKET> Clients(MaxClients);
+	SOCKET Socket = NewSocket();
+
 	// Manage The Connection
-	std::thread obj(ConnectionManager);
-	obj.join();
+	std::thread ConnThread(ConnectionManager, std::ref(Clients));
+	ConnThread.join();
+
+	// Get Messages From Client
+	while (true) {
+		if (Clients.size() > 0) {
+			break;
+		}
+	}
+
+	std::thread RecvThread(RecvMessages, std::ref(Socket), std::ref(Clients));
+
+	RecvThread.join();
 
 	return 0;
 }
