@@ -13,7 +13,10 @@
 void RecvMessages(SOCKET Socket, std::vector<SOCKET> Clients) {
 	// Get The Message
 	char Message[MessageLength];
-	int Bytes = recv(Socket, Message, MessageLength, 0);
+	int Bytes;
+	for (SOCKET Client : Clients) {
+		Bytes = recv(Client, Message, MessageLength, 0);
+	}
 	int MessageLen = sizeof(Message);
 
 	// Send The Message To All OTher Clients
@@ -83,6 +86,7 @@ int main() {
 		if (Clients.size() > 0) {
 			break;
 		}
+		Sleep(0.1);
 	}
 
 	std::thread RecvThread(RecvMessages, std::ref(Socket), std::ref(Clients));
