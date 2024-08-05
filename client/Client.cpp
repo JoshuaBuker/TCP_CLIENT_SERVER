@@ -4,58 +4,56 @@
 #include <tchar.h>
 #include <thread>
 
+#pragma comment(lib,"Ws2_32.lib")
 using std::cout, std::string;
 
-int getMessages(SOCKET& clientSocket) {
-  char buffer[1024];
+#define PORT 55555
+#define IP "127.0.0.1"
+#define MAX_MESSAGE_LENGTH 1024
+
+SOCKET clientSocket;
+std::unique_ptr<std::thread> threads[2];
+
+int getMessages(const SOCKET& clientSocket) {
+  char buffer[MAX_MESSAGE_LENGTH];
 
   while (true) {
-    memset(buffer, 0, sizeof(buffer));
-    int byteCount = recv(clientSocket, buffer, 1024, 0);
-    cout << "\nOther User: " << buffer << "\n";
+    int byteCount = recv(clientSocket, buffer, MAX_MESSAGE_LENGTH, 0);
+    if (byteCount > 0) {
+      cout << "\nOther User: " << buffer << "\n";
+    } 
   }
+
+  return 0;
 }
 
-int sendMessages(SOCKET& clientSocket) {
-  char buffer[1024];
+int sendMessages(const SOCKET& clientSocket) {
+  char buffer[MAX_MESSAGE_LENGTH];
 
   while (true) {
-    std::cin.clear();
-    fflush(stdin);
-    cout << "Enter your message to the server: ";
-    std::cin.getline(buffer, 1024);
-
-    int byteCount = send(clientSocket, buffer, 1024, 0);
-
-    if (!(byteCount > 0)) {
-      cout << "Message has failed to send!\n";
-    }
+    std::cin.getline(buffer, MAX_MESSAGE_LENGTH);
+    send(clientSocket, buffer, MAX_MESSAGE_LENGTH, 0);
   }
+
+  return 0;
 }
 
-int main(void) {
-  // -------------------------------------------------------------
-
-  SOCKET clientSocket;
-  const int port = 55555;
+int loadDLL() {
   WSADATA wsaData;
   int wsaerr;
   WORD wVersionRequested = MAKEWORD(2, 2);
-
-  // -------------------------------------------------------------
 
   wsaerr = WSAStartup(wVersionRequested, &wsaData);
 
   if (wsaerr != 0) {
     cout << "The winsock dll not found!" << std::endl;
-    return 0;
+    return -1;
   }
 
-  cout << "The Winsock dll found!" << "\n";
-  cout << "The Status: " << wsaData.szSystemStatus << std::endl;
+  return 0;
+}
 
-  // -------------------------------------------------------------
-
+int createSocket(SOCKET& clientSocket) {
   clientSocket = INVALID_SOCKET;
 
   clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -63,40 +61,51 @@ int main(void) {
   if (clientSocket == INVALID_SOCKET) {
     cout << "Error at socket(): " << WSAGetLastError() << std::endl;
     WSACleanup();
-    return 0;
+    return -1;
   }
 
-  cout << "socket() is OK!" << std::endl;
+  return 1;
+}
 
-  // -------------------------------------------------------------
-
+int connectToServer(const SOCKET& clientSocket) {
   sockaddr_in clientService;
   clientService.sin_family = AF_INET;
 
-  InetPton(AF_INET, _T("127.0.0.1"), &clientService.sin_addr.s_addr);
+  InetPton(AF_INET, _T(IP), &clientService.sin_addr.s_addr);
 
-  clientService.sin_port = htons(port);
+  clientService.sin_port = htons(PORT);
 
   if (connect(clientSocket, (SOCKADDR*)&clientService, sizeof(clientService)) == SOCKET_ERROR) {
     cout << "Client: connect() - Failed To Connect: " << WSAGetLastError() << std::endl;
     WSACleanup();
+    return -1;
+  }
+
+  return 0;
+}
+
+int initializeServer(SOCKET& clientSocket) {
+  if (loadDLL() == -1) { return -1; }
+  if (createSocket(clientSocket) == -1) { return -1; };
+  if (connectToServer(clientSocket) == -1) { return -1; };
+
+  return 0;
+}
+
+int main(void) {
+  if (initializeServer(clientSocket) == -1) {
+    cout << "Failed to initalize server.";
     return 0;
   }
 
-  cout << "Client: connect() is OK!\n" << "Client: Can start sending and receiving data..." << std::endl;
+  threads[0] = std::make_unique<std::thread>(sendMessages, std::ref(clientSocket));
+  threads[1] = std::make_unique<std::thread>(getMessages, std::ref(clientSocket));
 
-  // -------------------------------------------------------------
-
-  std::unique_ptr<std::thread> sendThread = std::make_unique<std::thread>(sendMessages, std::ref(clientSocket));
-  std::unique_ptr<std::thread> receiveThread = std::make_unique<std::thread>(getMessages, std::ref(clientSocket));
-
-  if (receiveThread && receiveThread->joinable()) {
-      receiveThread->join();
+  for (auto& thread : threads) {
+    if (thread->joinable()) {
+      thread->join();
+    }
   }
-  if (sendThread && sendThread->joinable()) {
-      sendThread->join();
-  }
-  // -------------------------------------------------------------
 
   closesocket(clientSocket);
   system("pause");
