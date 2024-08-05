@@ -7,6 +7,8 @@
 #include <tchar.h>
 #include <ws2tcpip.h>
 
+#pragma comment(lib,"Ws2_32.lib")
+
 #define MAX_CLIENTS 10
 #define MESSAGE_BUFFER_SIZE 1024
 #define IP "127.0.0.1"
@@ -32,7 +34,7 @@ void getMessages(SOCKET client, std::vector<SOCKET>& clientSockets) {
             break;
         }
 
-        buffer[byteCount] = '\0';
+        //buffer[byteCount] = '\0';
         printf("Client: %s\n", buffer);
 
         std::lock_guard<std::mutex> lock(clientMutex);

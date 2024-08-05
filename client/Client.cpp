@@ -5,7 +5,7 @@
 #include <thread>
 
 #pragma comment(lib,"Ws2_32.lib")
-using std::cout, std::string;
+//using std::cout, std::string;
 
 #define PORT 55555
 #define IP "127.0.0.1"
@@ -20,7 +20,7 @@ int getMessages(const SOCKET& clientSocket) {
   while (true) {
     int byteCount = recv(clientSocket, buffer, MAX_MESSAGE_LENGTH, 0);
     if (byteCount > 0) {
-      cout << "\nOther User: " << buffer << "\n";
+      std::cout << "\nOther User: " << buffer << "\n";
     } 
   }
 
@@ -46,7 +46,7 @@ int loadDLL() {
   wsaerr = WSAStartup(wVersionRequested, &wsaData);
 
   if (wsaerr != 0) {
-    cout << "The winsock dll not found!" << std::endl;
+      std::cout << "The winsock dll not found!" << std::endl;
     return -1;
   }
 
@@ -59,7 +59,7 @@ int createSocket(SOCKET& clientSocket) {
   clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
   if (clientSocket == INVALID_SOCKET) {
-    cout << "Error at socket(): " << WSAGetLastError() << std::endl;
+      std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
     WSACleanup();
     return -1;
   }
@@ -76,7 +76,7 @@ int connectToServer(const SOCKET& clientSocket) {
   clientService.sin_port = htons(PORT);
 
   if (connect(clientSocket, (SOCKADDR*)&clientService, sizeof(clientService)) == SOCKET_ERROR) {
-    cout << "Client: connect() - Failed To Connect: " << WSAGetLastError() << std::endl;
+    std::cout << "Client: connect() - Failed To Connect: " << WSAGetLastError() << std::endl;
     WSACleanup();
     return -1;
   }
@@ -94,7 +94,7 @@ int initializeServer(SOCKET& clientSocket) {
 
 int main(void) {
   if (initializeServer(clientSocket) == -1) {
-    cout << "Failed to initalize server.";
+    std::cout << "Failed to initalize server.";
     return 0;
   }
 
