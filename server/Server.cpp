@@ -9,6 +9,8 @@
 
 #define MAX_CLIENTS 10
 #define MESSAGE_BUFFER_SIZE 1024
+#define IP "127.0.0.1"
+#define PORT 55555
 
 using std::cout;
 
@@ -71,7 +73,6 @@ void connectionManager(const SOCKET server, std::vector<std::unique_ptr<std::thr
 }
 
 SOCKET makeServer() {
-  const int port = 55555;
   int wsaerr;
   WORD wVersionRequested = MAKEWORD(2,2);
   SOCKET serverSocket;
@@ -96,8 +97,8 @@ SOCKET makeServer() {
   sockaddr_in service;
   service.sin_family = AF_INET;
 
-  InetPton(AF_INET, _T("127.0.0.1"), &service.sin_addr.s_addr);
-  service.sin_port = htons(port);
+  InetPton(AF_INET, _T(IP), &service.sin_addr.s_addr);
+  service.sin_port = htons(PORT);
 
   if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
     cout << "bind() failed: " << WSAGetLastError() << std::endl;
