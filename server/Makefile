@@ -2,10 +2,10 @@ CC = g++
 CFLAGS = -g -Wall
 LIBS = -lwsock32 -lws2_32
 
-SRCS = ServerThreaded.cpp
+SRCS = Server.cpp
 OBJS = $(SRCS:.cpp=.o)
 
-EXEC = ServerThreaded
+EXEC = Server
 
 all: $(EXEC)
 
